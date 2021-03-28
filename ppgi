@@ -35,6 +35,7 @@ abspath() {
     fi
 }
 script_path="$(abspath "${0}")"
+_sed="$(command -v sed)"
 
 #############
 # UnInstall #
@@ -43,33 +44,33 @@ script_path="$(abspath "${0}")"
 if [ "$1" = "uninstall" ]; then
   if grep -q 'alias pomander' ~/.bash_aliases; then
     printf '%s\n' "removing pomander from bash aliases"
-    if sed -i '/alias pomander/d' ~/.bash_aliases; then
+    if "$_sed" -i '/alias pomander/d' ~/.bash_aliases; then
       printf '%s\n\n' "pomander alias successfully removed"
     fi
   fi
   if grep -q 'alias cdh' ~/.bash_aliases; then
     printf '%s\n' "removing cdh from bash aliases"
-    if sed -i '/alias cdh/d' ~/.bash_aliases; then
+    if "$_sed" -i '/alias cdh/d' ~/.bash_aliases; then
       printf '%s\n\n' "cdh alias successfully removed"
     fi
   fi
   if [ -n "$ppgi_path" ]; then
-    #sed -i '/ppgi_path/' "$script_path"
+    #"$_sed" -i '/ppgi_path/' "$script_path"
     printf '%s\n' "removing ppgi from path"
     if (sudo rm "$ppgi_path"); then
       printf '%s\n\n' "ppgi successfully removed from \$PATH"
     fi
   fi
   if [ -n "$mine_gitu" ]; then
-    sed -i '/^mine_gitu="/d' "$script_path"
+    "$_sed" -i '/^mine_gitu="/d' "$script_path"
     printf '%s\n\n' "mine_gitu var successfully removed"
   fi
   if [ -n "$hack_path" ]; then
-    sed -i '/^hack_path="/d' "$script_path"
+    "$_sed" -i '/^hack_path="/d' "$script_path"
     printf '%s\n\n' "hack_path var successfully removed"
   fi
   if [ -n "$ppgi_path" ]; then
-    sed -i '/^ppgi_path="/d' "$script_path"
+    "$_sed" -i '/^ppgi_path="/d' "$script_path"
     printf '%s\n\n' "ppgi_path var successfully removed"
   fi
   printf '%s\n' "uninstalled successfully."
@@ -79,9 +80,9 @@ fi
 ###############################################################################
 # functions #
 ###############################################################################
-# forced choice, either accept or customize (in some cases)
+# forced choice, cannot continue without accepting
 choose() {
-  printf '%s\n%s\n%s\n\n' "press <enter> to accept default" "Y: $1" "n: $2"
+  printf '%s\n%s\n%s\n' "press <enter> to accept" "     Y: $1" "     n: $2"
   read -r -p "[Y/n]?: " response
   if [ "$response" = "n" ] || [ "$response" = "N" ]; then
     choose "$1" "$2"
@@ -89,21 +90,19 @@ choose() {
     return 0
   fi
 }
-#forced_choice
-#custom_choice() {
-#  printf '%s\n%s\n%s\n\n' "press <enter> to accept default" "Y: $1" "n: $2"
-#  read -r -p "[Y/n]?: " response
-#  if [ "$response" = "n" ] || [ "$response" = "N" ]; then
-#    while [ "$accept" != "y" ]; do
-#      read -r -p "$3" accept
-#    done
-#  else
-#    return 0
-#  fi
-#}
+# accept default, or customize
+custom_choice() {
+  "$1"
+  yes_no "$2" "$3"
+  if [ "$?" -eq 1 ]; then
+    custom_choice "$1" "$2" "$3"
+  else
+    return 0
+  fi
+}
 # optional choice, a no response allows script to continue
 yes_no() {
-  printf '%s\n%s\n%s\n\n' "press <enter> to accept default" "Y: $1" "n: $2"
+  printf '%s\n%s\n%s\n' "press <enter> to accept" "     Y: $1" "     n: $2"
   read -r -p "[Y/n]?: " response
   if [ "$response" = "n" ] || [ "$response" = "N" ]; then
     return 1
@@ -117,11 +116,15 @@ check_for() {
   printf '\n%s\n\n' "checking for dependency.."
   printf '%-12s%s\n' "PACKAGE" "STATUS"
   _cmd=$(command -v "$1") 2>/dev/null
+  if [ "$?" -eq 1 ]; then
+    printf '%-12s%s\n' "${1}" "missing."
+    return 1
+  fi
   if [ -x "$_cmd" ]; then
     printf '%-12s%s\n' "${1}" "found!"
     return 0
   else
-    printf '%-12s%s\n' "${1}" "missing."
+    printf '%-12s%s\n' "${1}" " is unexecutable."
     return 1
   fi
 }
@@ -140,7 +143,7 @@ if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
   repo_list_sorted=$(gh repo list hackreactor --private |\
               awk '/hr-rfe/ {print $3, substr($1,13)}' | sort -r)
   # this is way too much piping, should be able to do everything with awk?
-  repo_latest=$(echo "$repo_list_sorted" | sed -n '1p' | awk '{print $2}')
+  repo_latest=$(echo "$repo_list_sorted" | "$_sed" -n '1p' | awk '{print $2}')
   printf '\n%s\n\n' "latest repo: $repo_latest"
   yes_no "this is the repo I want" "give me a bigger list"
   if [ "$?" -eq 1 ]; then
@@ -165,7 +168,7 @@ if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
   git remote add pair "https://github.com/$pair_gitu/${hack_repo}.git"
   git remote add upstream "https://github.com/hackreactor/${hack_repo}.git"
   # drop user to shell at cloned repo
-  cd  "${hack_path}/${hack_repo}"
+  cd  "${hack_path}/${hack_repo}" || return
   $SHELL
   exit 0
 fi
@@ -178,9 +181,9 @@ fi
 
 setup_banner() {
   clear
+  printf '%s\n' "                          S E T U P                          "
   printf '%s\n' "#############################################################"
-  printf '%s\n' "##########################[ ppgi ]###########################"
-  printf '%s\n' "######################### S E T U P #########################"
+  printf '%s\n' "###########################[ ppgi ]##########################"
   printf '%s\n' "#############################################################"
   printf '%s\n' "Ctrl+c at anytime to exit script (SIGINT)"
   printf '\n'
@@ -190,10 +193,10 @@ setup_banner() {
 # training #
 ############
 setup_banner
-printf '%s\n' "please READ:"
-printf '%s\n' "in this script you will be presented with CHOICES"
-printf '%s\n\n' "some mandatory (this one), some cutomizable, some optional"
-printf '%s\n\n' "Accept?"
+printf '%s\n'     "please READ:"
+printf '%s\n'     "in this script you will be presented with CHOICES"
+printf '%s\n\n'   "some mandatory (this one), some cutomizable, some optional"
+printf '%s\n'     "Accept?"
 choose "continue" "I can't read."
 
 ###############################################################################
@@ -201,49 +204,40 @@ choose "continue" "I can't read."
 ###############################################################################
 
 print_icon() {
-if [ "$OS" = "macos" ]; then
-cat <<'EOF'
-          _
-         (/
-    .---__--.
-   /         \
-  |         /
-  |         \\_
-   \         /
-    \`._.-._.\`
-EOF
-fi
-if [ "$OS" = "linux" ]; then
-cat <<EOF
-           _
-       ---(_)
-   _/  ---  \\
-  (_) |   |
-    \\  --- _/
-       ---(_)
-EOF
-fi
-if [ "$OS" = "windo" ]; then
-cat <<EOF
-          _.-;;-._
-   '-..-'|   ||   |
-   '-..-'|_.-;;-._|
-   '-..-'|   ||   |
-   '-..-'|_.-''-._|
-EOF
-fi
-if [ "$OS" = "linuxonwindo" ]; then
-cat <<EOF
-                                 (HALP!)
-          _.-;;-._            _  |/         _.-;;-._
-   '-..-'|   ||   |       ---(_)     '-..-'|   ||   |
-   '-..-'|_.-;;-._|   _/  ---  \\    '-..-'|_.-;;-._|
-   '-..-'|   ||   |  (_) |   |       '-..-'|   ||   |
-   '-..-'|_.-''-._|    \\  --- _/    '-..-'|_.-''-._|
-                         ---(_)
-
-EOF
-fi
+  if [ "$OS" = "macos" ]; then
+    printf '%s\n' "          _    "
+    printf '%s\n' "        (/     "
+    printf '%s\n' "  .---__--.    "
+    printf '%s\n' " /         \   "
+    printf '%s\n' "|         /    "
+    printf '%s\n' "|         \\_  "
+    printf '%s\n' " \         /   "
+    printf '%s\n' "  \`._.-._.\`  "
+  fi
+  if [ "$OS" = "linux" ]; then
+    printf '%s\n' "          _    "
+    printf '%s\n' "    / ---(_)   "
+    printf '%s\n' "  _/  ---  \\  "
+    printf '%s\n' " (_) |   |   | "
+    printf '%s\n' "   \\  --- _/  "
+    printf '%s\n' "      ---(_)   "
+  fi
+  if [ "$OS" = "windo" ]; then
+    printf '%s\n' "          _.-;;-._   "
+    printf '%s\n' "   '-..-'|   ||   |  "
+    printf '%s\n' "   '-..-'|_.-;;-._|  "
+    printf '%s\n' "   '-..-'|   ||   |  "
+    printf '%s\n' "   '-..-'|_.-''-._|  "
+  fi
+  if [ "$OS" = "linuxonwindo" ]; then
+    printf '%s\n' "                                 (HALP!)                   "
+    printf '%s\n' "          _.-;;-._            _  |/         _.-;;-._       "
+    printf '%s\n' "   '-..-'|   ||   |       ---(_)     '-..-'|   ||   |      "
+    printf '%s\n' "   '-..-'|_.-;;-._|   _/  ---  \\    '-..-'|_.-;;-._|      "
+    printf '%s\n' "   '-..-'|   ||   |  (_) |   |       '-..-'|   ||   |      "
+    printf '%s\n' "   '-..-'|_.-''-._|    \\  --- _/    '-..-'|_.-''-._|      "
+    printf '%s\n' "                         ---(_)                            "
+  fi
 }
 
 # identify Operating System
@@ -286,11 +280,8 @@ if [ "$OS" = "macos" ]; then
   fi
   check_for sed
   if [ "$?" -eq 1 ]; then
-    brew install sed
-  fi
-  check_for tree
-  if [ "$?" -eq 1 ]; then
-    brew install tree
+    brew install gnu-sed
+    "$_sed"="$(command -v gsed)"
   fi
 fi
 
@@ -319,16 +310,11 @@ if [ "$OS" = "linux" ]; then
   fi
   check_for sed
   if [ "$?" -eq 1 ]; then
+    # sed is part of GNU coreutils, default installed on all Ubuntu systems?
     printf '%s\n' "install sed? (y/n): "
     printf '%s\n' "this might require SU (SuperUser) permissions..."
     choose "sed is a required software dependency, install?" "cannot continue"
     sudo apt install sed
-  fi
-  check_for tree
-  if [ "$?" -eq 1 ]; then
-    printf '%s\n' "install tree?: "
-    choose "tree is a required software dependency, install?" "cannot continue"
-    sudo apt install tree
   fi
 fi
 
@@ -339,67 +325,85 @@ fi
 if [ -z "$mine_gitu" ]; then
   #githubusr=
   setup_banner
-  read -r -p "enter your github username (ex. mattHR2021): " mine_gitu
-  printf '%b%s%b\n' "\e[4m\e[34m" "https://github.com/${mine_gitu}" "\e[0m"
-  (("mine_length=${#mine_gitu}+19"))
-  mine_length="$mine_length"
-  printf "%-${mine_length}s%s\n" "" "|\ is this you?"
-  #choose "enter your github username: "
-  read -r -p "(<enter> OR 'y' to accept) [y/n]?: " response
-  if [ "$response" = "n" ] || [ "$response" = "N" ]; then
-    while [ "$response" = "n" ] || [ "$response" = "N" ]; do
-      read -r -p "enter your github username (ex. mattHR2021): " mine_gitu
-      printf '%s\n' "https://github.com/$mine_gitu"
-      (("mine_length=${#mine_gitu}+19"))
-      printf "%-${mine_length}s%s\n" "" "|\ is this you?"
-      read -r -p "<enter>/Y: accept | N: re-enter github username" response
-    done
-  fi
-  sed -i "/^####\[ GitHub  UserName/a mine_gitu=\"$mine_gitu\""  "$script_path"
-  sed -i "/^####\[ GitHub  UserName/a mine_gitu=\"$mine_gitu\""  ./spgi
+  git_un_pickr() {
+    read -r -p "enter your github username (ex. mattHR2021): " mine_gitu
+    printf '%b%s%b\n' "\e[4m\e[34m" "https://github.com/${mine_gitu}" "\e[0m"
+    (("mine_length=${#mine_gitu}+19"))
+    mine_length="$mine_length"
+    printf "%-${mine_length}s%s\n\n" "" "|\ is THIS you?"
+  }
+  custom_choice git_un_pickr 'that IS me.' \
+    'Imposter! ...and/or I made a typographical error, please forgive me.'
+  "$_sed" -i "/^####\[ GitHub  UserName/a mine_gitu=\"$mine_gitu\"" "$script_path"
+  "$_sed" -i "/^####\[ GitHub  UserName/a mine_gitu=\"$mine_gitu\"" ./spgi
 fi
 
 if [ -z "$hack_path" ]; then
   setup_banner
-  printf '%s\n' "which directory would you like to clone your forks of HR repos to?"
-  printf '%s\n\n' "by default, sets to ${HOME}/hackreactor/"
-
-  printf '%s\n' "<enter> or (y) to accept, (n) to customize directory location"
-  read -r -p "(y/n): " response
-  if [ "$response" = "n" ] || [ "$response" = "N" ]; then
-    while [ "$hack_path_response" != "y" ]; do
-      read -r -p "enter the directory to clone HR repos to: " hack_path
-      printf '%s\n' "$(tree -L 1 "${hack_path}")"
-      read -r -p "^that^ directory?" hack_path_response
-      read -r -p "(<enter> OR 'y' to accept) [y/n]?: " response
-    done
-  else
-    mkdir -pv ~/hackreactor
+  hack_path_pickr() {
     hack_path="${HOME}/hackreactor/"
-  fi
-  sed -i "/^####\[ HackReactor path/a hack_path=\"$hack_path\"" "$script_path"
-  sed -i "/^####\[ HackReactor path/a hack_path=\"$hack_path\"" ./spgi
+    if [ -z "$hack_path_1st" ]; then
+      printf '%s\n'   "directory to clone forks of HR repos to?"
+      printf '%s\n\n' "by default, sets to ${HOME}/hackreactor/"
+      hack_path_1st=true
+    else
+      printf '\n%s\n' "OK. I understand you want a custom dir"
+      printf '%s\n'   "please enter ABSOLUTE path starting at /"
+      printf '%s\n'   "and include a trailing /"
+      printf '%s\n\n' "ex. ${HOME}/hackreactor/"
+      read -r -p "enter dir path to clone forked HR repos to: " hack_path
+      if [ -d "$hack_path" ]; then
+        printf '\n%s\n' "$hack_path"
+        printf '%s\n'   "^THIS^ path?"
+      else
+        printf '\n%s\n' "Well! I reckon that ain't even a dir"
+        yes_no "I'm fixin' to create such a dir" "I dun gooft. Lemme try again."
+        if [ "$?" -eq 0 ]; then
+          printf '\n%s\n' "okie dokie, making dir..."
+          printf '%s\n\n' "$hack_path"
+        fi
+      fi
+    fi
+    #yes_no thatsthedir customize
+  }
+  custom_choice hack_path_pickr "that's the dir!" \
+    "I'd like to customize a different dir location"
+
+  mkdir -pv "$hack_path"
+
+  "$_sed" -i "/^####\[ HackReactor path/a hack_path=\"$hack_path\"" "$script_path"
+  "$_sed" -i "/^####\[ HackReactor path/a hack_path=\"$hack_path\"" ./spgi
 fi
 
 if [ -z "$ppgi_path" ]; then
   setup_banner
-  printf '\n\n%s\n' "installing this script to your \$PATH"
-  printf '%s\n' "by default, installs to /usr/local/bin/"
-  printf '%s\n' "'N' if you want to customize install path"
-  read -r -p "(<enter> OR 'y' to accept) [y/n]?: " response
-  if [ "$response" = "n" ] || [ "$response" = "N" ]; then
-    printf '%s\n' "Where would you like to install then?"
-    printf '%s\n' "example: /usr/local/bin/"
-    read -r -p "Install path?: " ppgi_path
-    # check for valid path and trailing backslash
-  else
+  ppgi_path_pickr() {
     ppgi_path='/usr/local/bin/'
-  fi
-  sed -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" "$script_path"
-  sed -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" ./spgi
-  printf '%s\n' "installing ppgi to ${ppgi_path}..."
+    if [ -z "$ppgi_path_1st" ]; then
+      printf '\n\n%s\n' "installing this script to your \$PATH"
+      printf '%s\n'     "so that you can run it from anywhere in your shell"
+      printf '%s\n\n'   "by default, installs to /usr/local/bin/"
+      ppgi_path_1st=true
+    else
+      printf '\n%s\n' "OK. I understand you want to customize the install path"
+      printf '%s\n'   "please enter ABSOLUTE path starting at /"
+      printf '%s\n'   "and include a trailing /"
+      printf '%s\n\n' "ex. /usr/local/bin/"
+      read -r -p "enter the path to install ppgi to: " ppgi_path
+      if [ -d "$ppgi_path" ]; then
+        printf '\n%s\n' "$ppgi_path"
+        printf '%s\n'   "^THIS^ path?"
+      fi
+    fi
+  }
+  custom_choice ppgi_path_pickr "that's the path!" \
+    "I'd like to customize a different install path"
+
+  "$_sed" -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" "$script_path"
+  "$_sed" -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" ./spgi
+  printf '\n%s\n'  "installing ppgi to ${ppgi_path}..."
   printf '%s %s\n' "copying script to install path: " "$ppgi_path"
-  printf '%s\n' "this might require SU (SuperUser) permissions..."
+  printf '%s\n'    "this might require SU (SuperUser) permissions..."
   sudo cp "${script_path}" "${ppgi_path}"
 fi
 
@@ -422,69 +426,9 @@ else
   . "${HOME}/.bashrc"
 fi
 
-
 printf '%s\n\n' "ppgi setup complete."
 printf '%s\n' "ppgi has been added to your \$PATH"
 printf '%s\n' "you can now run ppgi from anywhere in your terminal"
 printf '%s\n%s\n\n' "just enter the command: " "ppgi"
 printf '%s\n' "Goodbye. :]"
 exit 0
-#printf '%s\n' "do you want to run ppgi now?"
-#read -r -p "(<enter> defaults to y) [y/n]?: " response
-#if [ "$response" = "n" ] || [ "$response" = "N" ]; then
-#  exec "${ppgi_path}ppgi"
-#  #rm "$script_path" && exec "${ppgi_path}ppgi"
-#fi
-#printf '\n%s\n\n' "checking for dependencies..."
-#printf '%-12s%s\n' "PACKAGE" "STATUS"
-#check_for brew
-#check_for sed
-#check_for gh
-#check_for tree
-#check_for figlet
-#echo $gh_exists
-#echo $sed_exists
-#echo $tree_exists
-###############################################################################
-# install this script to your PATH
-#ask() {
-#  local response=''
-#  read -r -p "$1" response
-#  if [ "${response,,}" = "y" ]; then
-#    return 0
-#  else
-#    return 1
-#  fi
-#}
-##alternative() {
-##  local response=''
-##  read -r -p "$1" response
-##  if [ "${response,,}" = "y" ]; then
-##    sed -i "/^####\[ ppgi install DIR/a ppgi_path=\"/usr/local/bin/ppgi\"" "$script_path"
-##  else
-##  fi
-##}
-#ask "Accept default install location in /usr/local/bin? (y/n): "
-#if [ "$?" -eq 1 ]; then
-#  alternative "Which location would you like to install to then?: "
-#fi
-#ask() {
-#  read -r -p "$1" response
-#  if [ "${response,,}" = "y" ]; then
-#    return
-#  else
-#    exit 1
-#  fi
-#}
-#
-#confirm() {
-#  while [ "{response,,}" != "y" ]; do
-#    read -r -p "$1" response
-#  done
-#}
-#real_path=$(command -v realpath);
-#script_path="$("$real_path" "$0")"
-#get_abs_filename() {
-#  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-#}
-#script_path="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
