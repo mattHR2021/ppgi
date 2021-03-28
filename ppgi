@@ -113,8 +113,6 @@ yes_no() {
 
 # check for software dependencies
 check_for() {
-  printf '\n%s\n\n' "checking for dependency.."
-  printf '%-12s%s\n' "PACKAGE" "STATUS"
   _cmd=$(command -v "$1") 2>/dev/null
   if [ "$?" -eq 1 ]; then
     printf '%-12s%s\n' "${1}" "missing."
@@ -147,6 +145,7 @@ if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
   printf '\n%s\n\n' "latest repo: $repo_latest"
   yes_no "this is the repo I want" "give me a bigger list"
   if [ "$?" -eq 1 ]; then
+    printf '\n%s\n\n' "repo's are listed in reverse chronological order"
     repo_list=$(gh repo list hackreactor --private |\
                 awk -v ORS=" " '/hr-rfe/ {print substr($1,13)}')
     PS3="select HR repo: "
@@ -160,7 +159,7 @@ if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
     hack_repo="${repo_latest}"
   fi
   #
-  read -r -p "pair partner's git username?: " pair_gitu
+  read -r -p "pair partner's git username? (ex. mattHR2021): " pair_gitu
   cd "$hack_path" || return
   gh repo fork "hackreactor/${hack_repo}"
   git clone "https://github.com/$mine_gitu/${hack_repo}.git"
@@ -176,6 +175,7 @@ fi
 #                              S E T U P                                      #
 ###############################################################################
 
+# should be EXPLICIT SETUP!!!
 # if $1 = "install"
 # check if ppgi in path already, if so, skip
 
@@ -203,46 +203,9 @@ choose "continue" "I can't read."
 # setup dependencies #
 ###############################################################################
 
-print_icon() {
-  if [ "$OS" = "macos" ]; then
-    printf '%s\n' "          _    "
-    printf '%s\n' "        (/     "
-    printf '%s\n' "  .---__--.    "
-    printf '%s\n' " /         \   "
-    printf '%s\n' "|         /    "
-    printf '%s\n' "|         \\_  "
-    printf '%s\n' " \         /   "
-    printf '%s\n' "  \`._.-._.\`  "
-  fi
-  if [ "$OS" = "linux" ]; then
-    printf '%s\n' "          _    "
-    printf '%s\n' "    / ---(_)   "
-    printf '%s\n' "  _/  ---  \\  "
-    printf '%s\n' " (_) |   |   | "
-    printf '%s\n' "   \\  --- _/  "
-    printf '%s\n' "      ---(_)   "
-  fi
-  if [ "$OS" = "windo" ]; then
-    printf '%s\n' "          _.-;;-._   "
-    printf '%s\n' "   '-..-'|   ||   |  "
-    printf '%s\n' "   '-..-'|_.-;;-._|  "
-    printf '%s\n' "   '-..-'|   ||   |  "
-    printf '%s\n' "   '-..-'|_.-''-._|  "
-  fi
-  if [ "$OS" = "linuxonwindo" ]; then
-    printf '%s\n' "                                 (HALP!)                   "
-    printf '%s\n' "          _.-;;-._            _  |/         _.-;;-._       "
-    printf '%s\n' "   '-..-'|   ||   |       ---(_)     '-..-'|   ||   |      "
-    printf '%s\n' "   '-..-'|_.-;;-._|   _/  ---  \\    '-..-'|_.-;;-._|      "
-    printf '%s\n' "   '-..-'|   ||   |  (_) |   |       '-..-'|   ||   |      "
-    printf '%s\n' "   '-..-'|_.-''-._|    \\  --- _/    '-..-'|_.-''-._|      "
-    printf '%s\n' "                         ---(_)                            "
-  fi
-}
-
 # identify Operating System
 setup_banner
-printf '\n%s\n\n' "identifying Operating System..."
+printf '%s\n' "identifying Operating System..."
 kernel_name="$(uname -s)"
 case "$kernel_name" in
   Linux*)  OS='linux';;
@@ -254,14 +217,27 @@ esac
 # install missing dependencies per OS
 if [ "$OS" = "windo" ]; then
   printf '\n%s\n' "Windows© detected."
-  print_icon
-  printf '\n%s\n' ":["
+  printf '%s\n' "          _.-;;-._   "
+  printf '%s\n' "   '-..-'|   ||   |  "
+  printf '%s\n' "   '-..-'|_.-;;-._|  "
+  printf '%s\n' "   '-..-'|   ||   |  "
+  printf '%s\n' "   '-..-'|_.-''-._|  "
+  printf '\n%s\n\n' ":["
   printf '%s\n' "https://www.privacytools.io/operating-systems/#win10"
 fi
 
 if [ "$OS" = "macos" ]; then
   printf '\n%s\n' "MacOS detected."
-  print_icon
+  printf '%s\n' "          _    "
+  printf '%s\n' "        (/     "
+  printf '%s\n' "  .---__--.    "
+  printf '%s\n' " /         \   "
+  printf '%s\n' "|         /    "
+  printf '%s\n' "|         \\_  "
+  printf '%s\n' " \         /   "
+  printf '%s\n' "  \`._.-._.\`  "
+  printf '\n%s\n'               "checking for software dependencies..."
+  printf '%-12s%s\n' "PACKAGE" "STATUS"
   check_for brew
   if [ "$?" -eq 1 ]; then
     printf '%s\n' "HomeBrew not installed"
@@ -287,16 +263,30 @@ fi
 
 if [ "$OS" = "linux" ]; then
   if   grep -q 'Microsoft' /proc/version; then
-    echo "Ubuntu on Windows© WSL detected. :/"
+    printf '%s\n' "Ubuntu on Windows© WSL detected. :/"
+    printf '%s\n' "                                 (HALP!)                   "
+    printf '%s\n' "          _.-;;-._            _  |/         _.-;;-._       "
+    printf '%s\n' "   '-..-'|   ||   |       ---(_)     '-..-'|   ||   |      "
+    printf '%s\n' "   '-..-'|_.-;;-._|   _/  ---  \\    '-..-'|_.-;;-._|      "
+    printf '%s\n' "   '-..-'|   ||   |  (_) |   |       '-..-'|   ||   |      "
+    printf '%s\n' "   '-..-'|_.-''-._|    \\  --- _/    '-..-'|_.-''-._|      "
+    printf '%s\n' "                         ---(_)                            "
   elif grep -q 'Ubuntu' /proc/version; then
-    print_icon
     printf '\n%s\n\n' "Ubuntu-based distro detected."
+    printf '%s\n' "          _    "
+    printf '%s\n' "    / ---(_)   "
+    printf '%s\n' "  _/  ---  \\  "
+    printf '%s\n' " (_) |   |   | "
+    printf '%s\n' "   \\  --- _/  "
+    printf '%s\n' "      ---(_)   "
   else
     printf '\n%s\n\n' "non-Ubuntu-based linux distro detected."
     printf '%s\n' "this script is only configured for Ubuntu-based distros."
     printf '%s\n' "exiting..."
     exit 1
   fi
+  printf '\n%s\n'    "checking for software dependencies..."
+  printf '%-12s%s\n' "PACKAGE" "STATUS"
   check_for gh
   if [ "$?" -eq 1 ]; then
     printf '%s\n' "install GitHub CLI? (y/n): "
@@ -318,6 +308,9 @@ if [ "$OS" = "linux" ]; then
   fi
 fi
 
+printf '\n%s\n\n' "Software dependencies met. Continue?"
+choose "continue" "we must go on"
+
 ###############################################################################
 # setup constants #
 ###################
@@ -335,7 +328,9 @@ if [ -z "$mine_gitu" ]; then
   custom_choice git_un_pickr 'that IS me.' \
     'Imposter! ...and/or I made a typographical error, please forgive me.'
   "$_sed" -i "/^####\[ GitHub  UserName/a mine_gitu=\"$mine_gitu\"" "$script_path"
-  "$_sed" -i "/^####\[ GitHub  UserName/a mine_gitu=\"$mine_gitu\"" ./spgi
+  if ! grep -q 'mine_gitu=' ./spgi; then
+    "$_sed" -i "/^####\[ GitHub  UserName/a mine_gitu=\"$mine_gitu\"" ./spgi
+  fi
 fi
 
 if [ -z "$hack_path" ]; then
@@ -372,7 +367,9 @@ if [ -z "$hack_path" ]; then
   mkdir -pv "$hack_path"
 
   "$_sed" -i "/^####\[ HackReactor path/a hack_path=\"$hack_path\"" "$script_path"
-  "$_sed" -i "/^####\[ HackReactor path/a hack_path=\"$hack_path\"" ./spgi
+  if ! grep -q 'hack_path=' ./spgi; then
+    "$_sed" -i "/^####\[ HackReactor path/a hack_path=\"$hack_path\"" ./spgi
+  fi
 fi
 
 if [ -z "$ppgi_path" ]; then
@@ -400,7 +397,9 @@ if [ -z "$ppgi_path" ]; then
     "I'd like to customize a different install path"
 
   "$_sed" -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" "$script_path"
-  "$_sed" -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" ./spgi
+  if ! grep -q 'hack_path=' ./spgi; then
+    "$_sed" -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" ./spgi
+  fi
   printf '\n%s\n'  "installing ppgi to ${ppgi_path}..."
   printf '%s %s\n' "copying script to install path: " "$ppgi_path"
   printf '%s\n'    "this might require SU (SuperUser) permissions..."
@@ -410,15 +409,17 @@ fi
 # bash aliases
 setup_banner
 printf '%s\n\n' "OPTIONAL bash aliases..."
-printf '%s\n' "do you want to add a bash alias to install pomander?"
+printf '%s\n' "do you want to add the bash alias 'pomander'?"
+printf '%s\n\n' " desc: 'pomander' installs pomander at whatever pwd you're at"
 #also check if it's currently in aliases
 # if grep 'pomander' ~/.bash_aliases
-yes_no "add pomander alias to bash - installs pomander at pwd" "do not add alias" &&\
+yes_no "add pomander alias to bash" "do not add alias" &&\
   pom_url='https://raw.githubusercontent.com/reactorcore/pomander/master/bin/install' &&\
   printf '%s\n' "alias pomander='curl -s ${pom_url} | bash'" >> ~/.bash_aliases
 
-printf '\n%s\n' "do you want to add a bash alias that cd's to your HR dir?"
-yes_no "add cdh alias to bash - cd's to your HR dir" "do not add alias" &&\
+printf '\n%s\n' "do you want to add the bash alias 'cdh'?"
+printf '%s\n\n' " desc: 'cdh' will cd to your chosen HR dir from anywhere"
+yes_no "add cdh alias to bash" "do not add alias" &&\
   printf '%s\n' "alias cdh='cd ${hack_path}'" >> ~/.bash_aliases
 if [ "$OS" = "macos" ]; then
   . "${HOME}/.bash_profile"
