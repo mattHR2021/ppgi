@@ -257,7 +257,7 @@ if [ "$OS" = "macos" ]; then
   check_for sed
   if [ "$?" -eq 1 ]; then
     brew install gnu-sed
-    "$_sed"="$(command -v gsed)"
+    _sed="$(command -v gsed)"
   fi
 fi
 
