@@ -22,5 +22,8 @@
   + adds an optional 'pomander' alias - installs pomander at $PWD
   + adds an optional 'cdh' alias - cd's to your HR dir
 
+## Uninstall
+    ./ppgi uninstall
+
 ### To-Do
 + rewrite in POSIX sh
