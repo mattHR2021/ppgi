@@ -135,9 +135,8 @@ check_for() {
 ##############
 ###############################################################################
 if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
-  # only list most recent 1st - awk can get the 4th? column
-  #   filter by those that have h (hours) in name
-  #   and find the least hours ago...
+  # perhaps it should compare with dirs in your hack_path to skip over
+  # repos already forked&cloned
   repo_list_sorted=$(gh repo list hackreactor --private |\
               awk '/hr-rfe/ {print $3, substr($1,13)}' | sort -r)
   # this is way too much piping, should be able to do everything with awk?
@@ -168,6 +167,10 @@ if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
   git remote add upstream "https://github.com/hackreactor/${hack_repo}.git"
   # drop user to shell at cloned repo
   cd  "${hack_path}/${hack_repo}" || return
+  clear
+  printf '\n%s\n' "dropping you off at ${PWD}"
+  printf '\n%s\n' "these are your git remotes now: "
+  git remote -v
   $SHELL
   exit 0
 fi
@@ -432,4 +435,5 @@ printf '%s\n' "ppgi has been added to your \$PATH"
 printf '%s\n' "you can now run ppgi from anywhere in your terminal"
 printf '%s\n%s\n\n' "just enter the command: " "ppgi"
 printf '%s\n' "Goodbye. :]"
+# timeout 3s curl parrot.live
 exit 0
