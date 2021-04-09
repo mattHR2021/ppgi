@@ -424,12 +424,13 @@ if [ -z "$ppgi_path" ]; then
 
   "$_sed" -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" "$script_path"
   if ! grep -q 'spgi_path=' ./spgi; then
-    "$_sed" -i "/^####\[ spgi_path install DIR/a spgi_path=\"${spgi_path}spgi\"" ./spgi
+    "$_sed" -i "/^####\[ spgi install DIR/a spgi_path=\"${spgi_path}spgi\"" ./spgi
   fi
-  printf '\n%s\n'  "installing ppgi to ${ppgi_path}..."
+  printf '\n%s\n'  "installing ppgi & spgi to ${ppgi_path}..."
   printf '%s %s\n' "copying script to install path: " "$ppgi_path"
   printf '%s\n'    "this might require SU (SuperUser) permissions..."
   sudo cp "${script_path}" "${ppgi_path}"
+  sudo cp ./spgi "${spgi_path}"
 fi
 
 # bash aliases

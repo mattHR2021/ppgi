@@ -49,7 +49,9 @@ fi
 
 #
 yes_no() {
-  printf '%s\n%s\n%s\n' "press <Enter> to accept default" "     Y: $1" "     n: $2"
+  printf '%s\n%s\n%s\n' "press <Enter> to accept default" \
+                        "     Y: $1"                      \
+                        "     n: $2"
   read -r -p "[Y/n]?: " response
   if [ "$response" = "n" ] || [ "$response" = "N" ]; then
     return 1
