@@ -21,12 +21,12 @@ while getopts "h:p:t" optionName; do
   esac
 done
 
-if [ "$1" = "p" ]; then
+if [ "$1" = "p" ] || [ "$1" = "pr" ] || [ "$1" = "pull" ]; then
   hack_repo="${PWD##*/}"
   gh pr create -R "hackreactor/${hack_repo}" -B "${mine_gitu}"
   exit 0
 fi
-if [ "$1" = "toy" ]; then
+if [ "$1" = "t" ] || [ "$1" = "tp" ] || [ "$1" = "toy" ]; then
   cd "$hack_path"
   hack_repo='hr-rfe2-toy-problems'
   printf '%s\n' "update your local copy of the toy problem repo?"
