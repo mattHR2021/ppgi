@@ -60,18 +60,39 @@ if [ "$1" = "uninstall" ]; then
     if (sudo rm "$ppgi_path"); then
       printf '%s\n\n' "ppgi successfully removed from \$PATH"
     fi
+    printf '%s\n' "removing spgi from path"
+    if (sudo rm /usr/local/bin/spgi); then
+      printf '%s\n\n' "spgi successfully removed from \$PATH"
+    fi
   fi
   if [ -n "$mine_gitu" ]; then
-    "$_sed" -i '/^mine_gitu="/d' "$script_path"
-    printf '%s\n\n' "mine_gitu var successfully removed"
+    if "$_sed" -i '/^mine_gitu="/d' "$script_path"; then
+      printf '%s\n\n' "mine_gitu var successfully removed from ppgi"
+    fi
+    if grep -q 'mine_gitu=' ./spgi; then
+      "$_sed" -i '/^mine_gitu="/d' ./spgi
+      printf '%s\n\n' "mine_gitu var successfully removed from spgi"
+    fi
   fi
   if [ -n "$hack_path" ]; then
-    "$_sed" -i '/^hack_path="/d' "$script_path"
-    printf '%s\n\n' "hack_path var successfully removed"
+    if "$_sed" -i '/^hack_path="/d' "$script_path"; then
+      printf '%s\n\n' "hack_path var successfully removed"
+    fi
+    if grep -q 'hack_path=' ./spgi; then
+      if "$_sed" -i '/^hack_path="/d' ./spgi; then
+        printf '%s\n\n' "hack_path var successfully removed from spgi"
+      fi
+    fi
   fi
   if [ -n "$ppgi_path" ]; then
-    "$_sed" -i '/^ppgi_path="/d' "$script_path"
-    printf '%s\n\n' "ppgi_path var successfully removed"
+    if "$_sed" -i '/^ppgi_path="/d' "$script_path"; then
+      printf '%s\n\n' "ppgi_path var successfully removed"
+    fi
+    if grep -q 'spgi_path=' ./spgi; then
+      if "$_sed" -i '/^spgi_path="/d' ./spgi; then
+        printf '%s\n\n' "spgi_path var successfully removed from spgi"
+      fi
+    fi
   fi
   printf '%s\n' "uninstalled successfully."
   exit 0
@@ -137,7 +158,7 @@ check_for() {
 if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
   # perhaps it should compare with dirs in your hack_path to skip over
   # repos already forked&cloned
-  repo_list_sorted=$(gh repo list hackreactor --private |\
+  repo_list_sorted=$(gh repo list hackreactor --private --no-archived |\
               awk '/hr-rfe/ {print $3, substr($1,13)}' | sort -r)
   # this is way too much piping, should be able to do everything with awk?
   repo_latest=$(echo "$repo_list_sorted" | "$_sed" -n '1p' | awk '{print $2}')
@@ -145,7 +166,7 @@ if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
   yes_no "this is the repo I want" "give me a bigger list"
   if [ "$?" -eq 1 ]; then
     printf '\n%s\n\n' "repo's are listed in reverse chronological order"
-    repo_list=$(gh repo list hackreactor --private |\
+    repo_list=$(gh repo list hackreactor --private --no-archived |\
                 awk -v ORS=" " '/hr-rfe/ {print substr($1,13)}')
     PS3="select HR repo: "
     select hack_repo in $repo_list; do
@@ -377,31 +398,33 @@ fi
 
 if [ -z "$ppgi_path" ]; then
   setup_banner
-  ppgi_path_pickr() {
-    ppgi_path='/usr/local/bin/'
-    if [ -z "$ppgi_path_1st" ]; then
-      printf '\n\n%s\n' "installing this script to your \$PATH"
-      printf '%s\n'     "so that you can run it from anywhere in your shell"
-      printf '%s\n\n'   "by default, installs to /usr/local/bin/"
-      ppgi_path_1st=true
-    else
-      printf '\n%s\n' "OK. I understand you want to customize the install path"
-      printf '%s\n'   "please enter ABSOLUTE path starting at /"
-      printf '%s\n'   "and include a trailing /"
-      printf '%s\n\n' "ex. /usr/local/bin/"
-      read -r -p "enter the path to install ppgi to: " ppgi_path
-      if [ -d "$ppgi_path" ]; then
-        printf '\n%s\n' "$ppgi_path"
-        printf '%s\n'   "^THIS^ path?"
-      fi
-    fi
-  }
-  custom_choice ppgi_path_pickr "that's the path!" \
-    "I'd like to customize a different install path"
+  ppgi_path='/usr/local/bin/'
+  spgi_path='/usr/local/bin/'
+  #ppgi_path_pickr() {
+  #  ppgi_path='/usr/local/bin/'
+  #  if [ -z "$ppgi_path_1st" ]; then
+  #    printf '\n\n%s\n' "installing this script to your \$PATH"
+  #    printf '%s\n'     "so that you can run it from anywhere in your shell"
+  #    printf '%s\n\n'   "by default, installs to /usr/local/bin/"
+  #    ppgi_path_1st=true
+  #  else
+  #    printf '\n%s\n' "OK. I understand you want to customize the install path"
+  #    printf '%s\n'   "please enter ABSOLUTE path starting at /"
+  #    printf '%s\n'   "and include a trailing /"
+  #    printf '%s\n\n' "ex. /usr/local/bin/"
+  #    read -r -p "enter the path to install ppgi to: " ppgi_path
+  #    if [ -d "$ppgi_path" ]; then
+  #      printf '\n%s\n' "$ppgi_path"
+  #      printf '%s\n'   "^THIS^ path?"
+  #    fi
+  #  fi
+  #}
+  #custom_choice ppgi_path_pickr "that's the path!" \
+  #  "I'd like to customize a different install path"
 
   "$_sed" -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" "$script_path"
-  if ! grep -q 'hack_path=' ./spgi; then
-    "$_sed" -i "/^####\[ ppgi install DIR/a ppgi_path=\"${ppgi_path}ppgi\"" ./spgi
+  if ! grep -q 'spgi_path=' ./spgi; then
+    "$_sed" -i "/^####\[ spgi_path install DIR/a spgi_path=\"${spgi_path}spgi\"" ./spgi
   fi
   printf '\n%s\n'  "installing ppgi to ${ppgi_path}..."
   printf '%s %s\n' "copying script to install path: " "$ppgi_path"

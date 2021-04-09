@@ -1,10 +1,55 @@
 #!/usr/bin/env bash
 
+###############################################################################
+#### C O N S T A N T S ########################################################
+###############################################################################
+####[ spgi install DIR ]####
+############################
+
+####[ GitHub  UserName ]####
+############################
+
+####[ HackReactor path ]####
+############################
+###############################################################################
+
+while getopts "h:p:t" optionName; do
+  case "$optionName" in
+    h) print_help;;
+    p) print_help p;;
+    t) print_help t;;
+  esac
+done
+
+if [ "$1" = "p" ]; then
+  hack_repo="${PWD##*/}"
+  gh pr create -R "hackreactor/${hack_repo}" -B "${mine_gitu}"
+  exit 0
+fi
+if [ "$1" = "toy" ]; then
+  cd "$hack_path"
+  hack_repo='hr-rfe2-toy-problems'
+  printf '%s\n' "update your local copy of the toy problem repo?"
+  printf '%s\n' "this will checkout your master branch"
+  printf '%s\n' "and pull upstream master from HR"
+  read -r -p "OK? (y/n)" response
+  if [ "${response}" != "n" ]; then
+    cd $hack_repo
+    git remote add upstream "https://github.com/hackreactor/$hack_repo"
+    git checkout master
+    git pull --no-edit upstream master
+    cd "$hack_repo"
+    cd "$(ls -t | head -n 1)"
+    # nvim *.js
+    printf '%s\n' "dropping you off at: $PWD"
+    $SHELL
+    exit 0
+  fi
+fi
 
 #
-hack_path='/home/minty/Documents/hackreactor/'
 yes_no() {
-  printf '%s\n%s\n%s\n\n' "press <enter> to accept default" "Y: $1" "n: $2"
+  printf '%s\n%s\n%s\n' "press <Enter> to accept default" "     Y: $1" "     n: $2"
   read -r -p "[Y/n]?: " response
   if [ "$response" = "n" ] || [ "$response" = "N" ]; then
     return 1
@@ -13,14 +58,14 @@ yes_no() {
   fi
 }
 
-repo_list_sorted=$(gh repo list hackreactor --private |\
+repo_list_sorted=$(gh repo list hackreactor --private --no-archived |\
             awk '/hr-rfe/ {print $3, substr($1,13)}' | sort -r)
 # this is way too much piping, should be able to do everything with awk?
 repo_latest=$(echo "$repo_list_sorted" | sed -n '1p' | awk '{print $2}')
 printf '\n%s\n\n' "latest repo: $repo_latest"
 yes_no "this is the repo I want" "give me a bigger list"
 if [ "$?" -eq 1 ]; then
-  repo_list=$(gh repo list hackreactor --private |\
+  repo_list=$(gh repo list hackreactor --private --no-archived |\
               awk -v ORS=" " '/hr-rfe/ {print substr($1,13)}')
   PS3="select HR repo: "
   select hack_repo in $repo_list; do
@@ -45,12 +90,7 @@ fi
 #done
 printf '\n%s\n' "selected repo: $hack_repo"
 
-# cd $hack_path
 cd "$hack_path"
-
-if [ "$1" = "up" ]; then
-  gh pr create -R hackreactor/$mine_gitu
-fi
 
 if [ -d ./$hack_repo ]; then
   if [ "$hack_repo" = "hr-rfe2-toy-problems" ]; then
@@ -62,7 +102,10 @@ if [ -d ./$hack_repo ]; then
         cd $hack_repo
         git remote add upstream "https://github.com/hackreactor/$hack_repo"
         git checkout master
-        git pull upstream master
+        git pull --no-edit upstream master
+        cd "$hack_repo"
+        printf '%s\n' "dropping you off at: $PWD"
+        $SHELL
         exit 0
       fi
   else
@@ -73,4 +116,6 @@ if [ -d ./$hack_repo ]; then
 else
   gh repo fork "hackreactor/$hack_repo"
   cd "$hack_repo"
+  $SHELL
+  exit 0
 fi
