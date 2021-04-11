@@ -154,12 +154,15 @@ if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
     printf '\n%s\n\n' "repo's are listed in reverse chronological order"
     repo_list=$(gh repo list hackreactor --private --no-archived |\
                 awk -v ORS=" " '/hr-rfe/ {print substr($1,13)}')
+    if [ -f tmp01.txt ] || [ -f tmp02.txt ]; then
+      rm "tmp0?.txt" 2>/dev/null
+    fi
     printf '%s\n' $already_forked >> tmp01.txt
     printf '%s\n' $repo_list >> tmp02.txt
-    unforked="$(grep -Fxv -f tmp01.txt tmp02.txt)"
-    rm tmp01.txt tmp02.txt
+    uncloned="$(grep -Fxv -f tmp01.txt tmp02.txt)"
+    rm "tmp0?.txt" 2>/dev/null
     PS3="select HR repo: "
-    select hack_repo in $unforked; do
+    select hack_repo in $uncloned; do
       case $hack_repo in
         *) printf '\n%s\n' "selected repo: ${hack_repo}"
            break;;
