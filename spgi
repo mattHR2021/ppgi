@@ -13,6 +13,8 @@
 ############################
 ###############################################################################
 
+# could have a function file to source between spgi/ppgi ?
+
 while getopts "h:p:t" optionName; do
   case "$optionName" in
     h) print_help;;
@@ -67,10 +69,18 @@ repo_latest=$(echo "$repo_list_sorted" | sed -n '1p' | awk '{print $2}')
 printf '\n%s\n\n' "latest repo: $repo_latest"
 yes_no "this is the repo I want" "give me a bigger list"
 if [ "$?" -eq 1 ]; then
+  already_forked="$(find ${hack_path} -maxdepth 1 -type d -name "hr-rfe2-*" -printf '%f\n')"
   repo_list=$(gh repo list hackreactor --private --no-archived |\
               awk -v ORS=" " '/hr-rfe/ {print substr($1,13)}')
+  if [ -f tmp01.txt ] || [ -f tmp02.txt ]; then
+    rm "tmp0?.txt" 2>/dev/null
+  fi
+  printf '%s\n' $already_forked >> tmp01.txt
+  printf '%s\n' $repo_list >> tmp02.txt
+  uncloned="$(grep -Fxv -f tmp01.txt tmp02.txt)"
+  rm "tmp0?.txt" 2>/dev/null
   PS3="select HR repo: "
-  select hack_repo in $repo_list; do
+  select hack_repo in $uncloned; do
     case $hack_repo in
       *) printf '\n%s\n' "selected repo: ${hack_repo}"
          break;;
@@ -79,21 +89,13 @@ if [ "$?" -eq 1 ]; then
 else
   hack_repo="${repo_latest}"
 fi
-#repo_list=$(gh repo list hackreactor --private |\
-#            awk -v ORS=" " '/hr-rfe/ {print $1}')
-#repo_listed=$($repo_list | awk -v ORS=" " '/hr-rfe/ {print $1}')
-#latest_repo="$($repo_list | awk '/hr-rfe/ {print $3, $1}' |\
-#               sort -r | sed -n '1p')"
-#echo $latest_repo
-#exit 0
-#PS3="select hackreactor repo: "
-#select hack_repo in $repo_list; do
-#  break
-#done
-printf '\n%s\n' "selected repo: $hack_repo"
 
+printf '\n%s\n' "selected repo: $hack_repo"
 cd "$hack_path"
 
+# if we only look at uncloned dirs
+# then no need to check if exists already
+# move to else
 if [ -d ./$hack_repo ]; then
   if [ "$hack_repo" = "hr-rfe2-toy-problems" ]; then
       printf '%s\n' "update your local copy of the toy problem repo?"
