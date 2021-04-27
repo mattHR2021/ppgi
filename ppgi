@@ -184,7 +184,7 @@ if [ -n "$ppgi_path" ] && [ -n "$mine_gitu" ] && [ -n "$hack_path" ]; then
   clear
   printf '\n%s\n' "dropping you off at ${PWD}"
   printf '\n%s\n' "these are your git remotes now: "
-  git remote -v
+  grep -B 1 'url' ./.git/config
   $SHELL
   exit 0
 fi
@@ -195,6 +195,8 @@ fi
 # should be EXPLICIT SETUP!!!
 # if $1 = "install"
 # check if ppgi in path already, if so, skip
+
+# amtm / diversion for tui inspiration
 
 setup_banner() {
   clear
@@ -341,6 +343,8 @@ if [ -z "$mine_gitu" ]; then
   setup_banner
   git_un_pickr() {
     read -r -p "enter your github username (ex. mattHR2021): " mine_gitu
+    # curl "https://github.com/${mine_gitu}"
+    # if "Not found" then make user re-enter username
     printf '%b%s%b\n' "\e[4m\e[34m" "https://github.com/${mine_gitu}" "\e[0m"
     (("mine_length=${#mine_gitu}+19"))
     mine_length="$mine_length"
@@ -420,11 +424,19 @@ printf '%s\n\n' " desc: 'pomander' installs pomander at whatever pwd you're at"
 yes_no "add pomander alias to bash" "do not add alias" &&\
   pom_url='https://raw.githubusercontent.com/reactorcore/pomander/master/bin/install' &&\
   printf '%s\n' "alias pomander='curl -s ${pom_url} | bash'" >> ~/.bash_aliases
-
 printf '\n%s\n' "do you want to add the bash alias 'cdh'?"
 printf '%s\n\n' " desc: 'cdh' will cd to your chosen HR dir from anywhere"
 yes_no "add cdh alias to bash" "do not add alias" &&\
   printf '%s\n' "alias cdh='cd ${hack_path}'" >> ~/.bash_aliases
+printf '\n%s\n' "do you want to add the bash alias 'gacp'?"
+printf '%s\n\n' " desc: gacp will all-in-one add ./* && git commit && git push"
+yes_no "add gacp alias to bash" "do not add alias" &&\
+  printf '%s\n' "alias gacp='git add ./* && git commit && git push'" >> ~/.bash_aliases
+  printf '%s\n' ""
+printf '\n%s\n' "do you want to add the bash alias 'gs'?"
+printf '%s\n\n' " desc: gs will run 'git status'"
+yes_no "add gs alias to bash" "do not add alias" &&\
+  printf '%s\n' "alias gs='git status'" >> ~/.bash_aliases
 if [ "$OS" = "macos" ]; then
   . "${HOME}/.bash_profile"
 else

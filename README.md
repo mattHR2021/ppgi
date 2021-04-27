@@ -7,6 +7,8 @@
 +     chmod +x ppgi
 +     ./ppgi
 
+asciinema demos:
+
 ## Features
 + main feature: automates the git initialization process for HR pair programming
   + presents list of HR repos to select from

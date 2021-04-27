@@ -29,6 +29,10 @@ if [ "$1" = "p" ] || [ "$1" = "pr" ] || [ "$1" = "pull" ]; then
   exit 0
 fi
 if [ "$1" = "t" ] || [ "$1" = "tp" ] || [ "$1" = "toy" ]; then
+  toy_problems
+fi
+
+toy_problems() {
   cd "$hack_path"
   hack_repo='hr-rfe2-toy-problems'
   printf '%s\n' "update your local copy of the toy problem repo?"
@@ -47,8 +51,7 @@ if [ "$1" = "t" ] || [ "$1" = "tp" ] || [ "$1" = "toy" ]; then
     $SHELL
     exit 0
   fi
-fi
-
+}
 #
 yes_no() {
   printf '%s\n%s\n%s\n' "press <Enter> to accept default" \
@@ -67,6 +70,8 @@ repo_list_sorted=$(gh repo list hackreactor --private --no-archived |\
 # this is way too much piping, should be able to do everything with awk?
 repo_latest=$(echo "$repo_list_sorted" | sed -n '1p' | awk '{print $2}')
 printf '\n%s\n\n' "latest repo: $repo_latest"
+# should also present options for toy problem checkout
+# and for pull request creation?
 yes_no "this is the repo I want" "give me a bigger list"
 if [ "$?" -eq 1 ]; then
   already_forked="$(find ${hack_path} -maxdepth 1 -type d -name "hr-rfe2-*" -printf '%f\n')"
@@ -103,14 +108,7 @@ if [ -d ./$hack_repo ]; then
       printf '%s\n' "and pull upstream master from HR"
       read -r -p "OK? (y/n)" response
       if [ "${response}" != "n" ]; then
-        cd $hack_repo
-        git remote add upstream "https://github.com/hackreactor/$hack_repo"
-        git checkout master
-        git pull --no-edit upstream master
-        cd "$hack_repo"
-        printf '%s\n' "dropping you off at: $PWD"
-        $SHELL
-        exit 0
+        toy_problems
       fi
   else
     printf '%s\n' "dir exists!!!"
