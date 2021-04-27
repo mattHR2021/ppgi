@@ -13,25 +13,7 @@
 ############################
 ###############################################################################
 
-# could have a function file to source between spgi/ppgi ?
-
-while getopts "h:p:t" optionName; do
-  case "$optionName" in
-    h) print_help;;
-    p) print_help p;;
-    t) print_help t;;
-  esac
-done
-
-if [ "$1" = "p" ] || [ "$1" = "pr" ] || [ "$1" = "pull" ]; then
-  hack_repo="${PWD##*/}"
-  gh pr create -R "hackreactor/${hack_repo}" -B "${mine_gitu}"
-  exit 0
-fi
-if [ "$1" = "t" ] || [ "$1" = "tp" ] || [ "$1" = "toy" ]; then
-  toy_problems
-fi
-
+# funcs
 toy_problems() {
   cd "$hack_path"
   hack_repo='hr-rfe2-toy-problems'
@@ -52,7 +34,7 @@ toy_problems() {
     exit 0
   fi
 }
-#
+
 yes_no() {
   printf '%s\n%s\n%s\n' "press <Enter> to accept default" \
                         "     Y: $1"                      \
@@ -64,6 +46,25 @@ yes_no() {
     return 0
   fi
 }
+
+# could have a function file to source between spgi/ppgi ?
+
+while getopts "h:p:t" optionName; do
+  case "$optionName" in
+    h) print_help;;
+    p) print_help p;;
+    t) print_help t;;
+  esac
+done
+
+if [ "$1" = "p" ] || [ "$1" = "pr" ] || [ "$1" = "pull" ]; then
+  hack_repo="${PWD##*/}"
+  gh pr create -R "hackreactor/${hack_repo}" -B "${mine_gitu}"
+  exit 0
+fi
+if [ "$1" = "t" ] || [ "$1" = "tp" ] || [ "$1" = "toy" ]; then
+  toy_problems
+fi
 
 repo_list_sorted=$(gh repo list hackreactor --private --no-archived |\
             awk '/hr-rfe/ {print $3, substr($1,13)}' | sort -r)

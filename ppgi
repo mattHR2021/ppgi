@@ -39,6 +39,18 @@ if [ "$1" = "uninstall" ]; then
       printf '%s\n\n' "cdh alias successfully removed"
     fi
   fi
+  if grep -q 'alias gacp' ~/.bash_aliases; then
+    printf '%s\n' "removing gacp from bash aliases"
+    if "$_sed" -i '/alias gacp/d' ~/.bash_aliases; then
+      printf '%s\n\n' "gacp alias successfully removed"
+    fi
+  fi
+  if grep -q 'alias gs' ~/.bash_aliases; then
+    printf '%s\n' "removing gs from bash aliases"
+    if "$_sed" -i '/alias gs/d' ~/.bash_aliases; then
+      printf '%s\n\n' "gs alias successfully removed"
+    fi
+  fi
   if [ -n "$ppgi_path" ]; then
     #"$_sed" -i '/ppgi_path/' "$script_path"
     printf '%s\n' "removing ppgi from path"
