@@ -1,7 +1,7 @@
 # Pair Programming Git Init (ppgi)
 
 ## Install
-+ cd the to base directory you want to install the repo to, then
++ cd the to base directory you want to clone the repo to, then
 +     git clone https://github.com/mattHR2021/ppgi.git
 +     cd ppgi
 +     chmod +x ppgi
